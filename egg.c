@@ -39,11 +39,8 @@
 */
 
 #include "stdio.h"
-//#include "io.h"
 #include "fcntl.h"
-//#include "conio.h"
 #include "stdlib.h"
-//#include "sys\stat.h"
 #include "math.h"
 #include "string.h"
 #include "ctype.h"
@@ -370,10 +367,10 @@ int main(int argc, char *argv[])
 
   printf("CQCrossLevel = %f\n", search.CQCrossLevel);
 
-  if(arg.CQCrossLevel == -1 && arg.cummulative == -1 && argc != 9 ||
-     arg.CQCrossLevel != -1 && arg.cummulative == -1 && argc != 11 ||
-     arg.CQCrossLevel == -1 && arg.cummulative != -1 && argc != 11 ||
-     arg.CQCrossLevel != -1 && arg.cummulative != -1 && argc != 13) usage();
+  if((arg.CQCrossLevel == -1 && arg.cummulative == -1 && argc != 9) ||
+     (arg.CQCrossLevel != -1 && arg.cummulative == -1 && argc != 11) ||
+     (arg.CQCrossLevel == -1 && arg.cummulative != -1 && argc != 11) ||
+     (arg.CQCrossLevel != -1 && arg.cummulative != -1 && argc != 13)) usage();
 
 
   /* OPEN SPEECH FILE */
@@ -449,7 +446,7 @@ int main(int argc, char *argv[])
 
 
 
-  while((ni = (fread(x + 2*N, sizeof(int), Lframe, fdr))) != NULL) {
+  while( (ni = (fread(x + 2*N, sizeof(int), Lframe, fdr)))  != 0) {
 	       /* fill buffer for 2N <= x < Lframe+N */
 
    /*
@@ -467,7 +464,9 @@ int main(int argc, char *argv[])
    */
 
 
+
     for(i = N; i < N+ni; i++) {
+
       /* 1) find NegPeak */
       if( (x[i]<search.NegDynLim) || (x[i]>search.PosDynLim) ) {
 	if(NegSignificantPoint(i)) {
@@ -632,6 +631,7 @@ int main(int argc, char *argv[])
 			}
 			/******************************/
 
+
 			fprintf(fpw, "%f %5.2f\n", aux2, aux);
 
 			if(chain.InitOfTracking == 0.0) {
@@ -734,6 +734,7 @@ int main(int argc, char *argv[])
     }
     overlap(ni);
     Nframe++;
+
   }
 
   statistics(1, arg.cummulative);
@@ -765,10 +766,10 @@ void usage()
 
   printf("Time series output:\n");
   printf("-p # (fundamental freq/period, 1=ms, 2=Hz)\n");
-  printf("-j # (jitter [PF1%], 1=interpolated zero crossings)\n");
-  printf("-s # (shimmer [PF1%], 1=peaks, 2=rms \n");
+  printf("-j # (jitter [PF1\%%], 1=interpolated zero crossings)\n");
+  printf("-s # (shimmer [PF1\%%], 1=peaks, 2=rms \n");
   printf("-n # (signal-to-noise ratio [HNR dB], 1=Comb\n");
-  printf("-q # (Closed Quotient [%] 1 = based on time only, 2 = based on areas\n");
+  printf("-q # (Closed Quotient [%%] 1 = based on time only, 2 = based on areas\n");
   printf("-x # (Speed Index, 1=(Opening-Closing)/(Opening+closing)\n\n");
 
   printf("F0 detection (common to all measurements):\n");
@@ -980,13 +981,15 @@ void closed_quotient(void)
 */
 
 {
-  int j, ta, tb, tc;
+  short j,ta, tb, tc;
   float aux, ClosedPhaseArea, OpenPhaseArea, CqLeveLx;
 
-  if(LastCycle.PosPeak_i == -1 || LastCycle.NegPeak_i == -1) {
-    NewCycle.ClosedQuot = NewCycle.ClosedQuotArea = -1;
-    return;
-  }
+  if(LastCycle.PosPeak_i == -1 || LastCycle.NegPeak_i == -1) 
+    {
+      NewCycle.ClosedQuot = NewCycle.ClosedQuotArea = -1;
+
+      return;
+    }
 
   /*  pega o cruzamento em 25% a partir do pico negativo
   CqLeveLx =   (float) LastCycle.PosPeakValue -
@@ -996,49 +999,61 @@ void closed_quotient(void)
   /* pega o cruzamento a partir do percentual passado em -t da cmd line */
   aux = ( (float) LastCycle.PosPeakValue - LastCycle.NegPeakValue)*CQLEVELX;
   CqLeveLx = (float) LastCycle.NegPeakValue + aux;
-
+  
   ClosedPhaseArea = OpenPhaseArea = 0.0;
-
+  
   /* find ta */
-  for(j = LastCycle.PosPeak_i; j>LastCycle.NegPeak_i; j--) {
-    if(x[j] >= CqLeveLx) {
-      ClosedPhaseArea += fabs(x[j]);
+  for(j = LastCycle.PosPeak_i; j>LastCycle.NegPeak_i; j--) 
+    {
+      if(x[j] >= CqLeveLx) 
+	{
+	  ClosedPhaseArea += fabs(x[j]);
+	}
+      else 
+	{
+	  ta = j;
+	  break;
+	}
     }
-    else {
-      ta = j;
-      break;
-    }
-  }
+
 
   /* find tb; tc = ta + pitch */
-  for(j = LastCycle.PosPeak_i + 1; j < NewCycle.NegPeak_i; j++) {
-    if(x[j] >= CqLeveLx) {
-      ClosedPhaseArea += fabs(x[j]);
+  for(j = LastCycle.PosPeak_i + 1; j < NewCycle.NegPeak_i; j++) 
+    {
+      if(x[j] >= CqLeveLx) 
+	{
+	  ClosedPhaseArea += fabs(x[j]);
+	}
+      else 
+	{
+	  tb = j;
+	  tc = ta + (short) ceil(NewCycle.pitch*header.nSamplesPerSec);
+	  /* avoid humps in the open phase */
+	  break;
+	}
     }
-    else {
-      tb = j;
-      tc = ta + (int) ceil(NewCycle.pitch*header.nSamplesPerSec);
-		/* avoid humps in the open phase */
-      break;
+  
+  for(j = tb+1; j < tc; j++) 
+    {
+      OpenPhaseArea += fabs(x[j]);
     }
-  }
-
-  for(j = tb+1; j < tc; j++) {
-    OpenPhaseArea += fabs(x[j]);
-  }
 
   NewCycle.ClosedQuot = 100.0*((float) tb-ta)/((float) tc - ta);
-  if(NewCycle.ClosedQuot < 0) {
-    printf("CQ(time) < 0\n");
-    NewCycle.ClosedQuot = -1;
-  }
+  if(NewCycle.ClosedQuot < 0) 
+    {
+      printf("CQ(time) < 0\n");
+      NewCycle.ClosedQuot = -1;
+    }
 
-  NewCycle.ClosedQuotArea = 100.0*ClosedPhaseArea/
-			       (ClosedPhaseArea+OpenPhaseArea);
-  if(NewCycle.ClosedQuotArea < 0) {
-    printf("CQ(area) < 0\n");
-    NewCycle.ClosedQuotArea = -1;
-  }
+  NewCycle.ClosedQuotArea = 100.0*ClosedPhaseArea/(ClosedPhaseArea+OpenPhaseArea);
+  
+  if(NewCycle.ClosedQuotArea < 0) 
+    {
+      printf("CQ(area) < 0\n");
+      NewCycle.ClosedQuotArea = -1;
+    }
+
+
 }
 
 void speed_index(void)

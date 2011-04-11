@@ -1,0 +1,37 @@
+* Included Tools:
+
+
+  ** flowgen_shimmer 
+
+   *** oral flow generation with controlled shimmer
+   and jitter perturbation, and glotal noise option.
+	
+	
+  ** vowel
+  
+   *** vocal tract filter with several vowel options.
+
+  ** acoustic
+   
+   *** tools for measurement of jitter, shimmer, f0 and snr 
+ 
+* Building instructions:
+
+
+  ** To build the tools, just type 'make' and be happy.
+
+  ** This has been tested under Debian GNU/Linux 6.0 and Ubuntu 10.04 LTS,
+  under i386 archicteture.
+
+  ** Under amd64, install ia32-libs and compile with -M32 flag.
+
+* Usage
+
+
+  ** The 'flowgen_shimmer' generates a wave file containing the oral flow,
+  and 'vowel' tool acts as a filter to this flow according to the
+  choosen vowel.
+
+  ** Running 'flowgen_shimmer' and 'vowel' without arguments will return
+  the usage instructions. 
+
